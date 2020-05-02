@@ -54,8 +54,10 @@ class Agent:
         ammo = np.zeros(10)  # This list will contain ammo of each 10 episodes in order to compute moving average
         rewards = np.zeros(10)  # This list will contain rewards of each 10 episodes in order to compute moving average
         losses = np.zeros(10)  # This list will contain losses of each 10 episodes in order to compute moving average
+        episode_lengths = np.zeros(10)
         # Pretraining phase
         game.new_episode()
+        episode_length = 0
         # Initialize current and previous game variables dictionnaries
         variables_cur = {'kills': game.get_game_variable(KILLCOUNT), 'health': game.get_game_variable(HEALTH),
                          'ammo': game.get_game_variable(AMMO2)}
@@ -87,6 +89,7 @@ class Agent:
                 self.memory.add((state, action, reward, next_state, torch.tensor([not done], dtype=torch.float)))
                 # Start a new episode
                 game.new_episode()
+                episode_length = 0
                 state = get_state(game)
                 state, stacked_frames = stack_frames(stacked_frames, state, True, self.stack_size, self.resize)
 
@@ -114,6 +117,7 @@ class Agent:
             tau = 0
             episode_rewards = []
             game.new_episode()
+            episode_length = 0
             variables_cur = {'kills': game.get_game_variable(KILLCOUNT), 'health': game.get_game_variable(HEALTH),
                              'ammo': game.get_game_variable(AMMO2)}
             variables_prev = variables_cur.copy()
@@ -130,6 +134,7 @@ class Agent:
                                                              self.possible_actions)
                 # Perform the chosen action on frame_skip frames
                 reward = game.make_action(action, frame_skip)
+                episode_length += 1
                 # Update the game vaiables dictionnaries and get the reshaped reward
                 variables_cur['kills'] = game.get_game_variable(KILLCOUNT)
                 variables_cur['health'] = game.get_game_variable(HEALTH)
@@ -147,9 +152,9 @@ class Agent:
                     next_state, stacked_frames = stack_frames(stacked_frames, next_state, False, self.stack_size, self.resize)
                     total_reward = np.sum(episode_rewards)
                     print('Episode: {}'.format(episode),
-                          'Total reward: {:.2f}'.format(total_reward),
-                          'Training loss: {:.4f}'.format(loss),
-                          'Explore P: {:.4f}'.format(explore_probability))
+                          'Length: {}'.format(episode_length),
+                          'Explore P: {:.4f}'.format(explore_probability),
+                          )
                     # Add experience to the replay buffer
                     self.memory.add((state, action, reward, next_state, torch.tensor([not done], dtype=torch.float)))
                     # Add number of kills and ammo variables
@@ -157,10 +162,12 @@ class Agent:
                     ammo[episode % 10] = game.get_game_variable(AMMO2)
                     rewards[episode % 10] = total_reward
                     losses[episode % 10] = loss
+                    episode_lengths[episode % 10] = episode_length
                     # Update writer
                     if (episode > 0) and (episode % 10 == 0):
                         writer.add_scalar('Game variables/Kills', kill_count.mean(), episode)
                         writer.add_scalar('Game variables/Ammo', ammo.mean(), episode)
+                        writer.add_scalar('Game variables/Length', episode_lengths.mean(), episode)
                         writer.add_scalar('Reward Loss/Reward', rewards.mean(), episode)
                         writer.add_scalar('Reward Loss/loss', losses.mean(), episode)
 
