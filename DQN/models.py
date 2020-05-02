@@ -3,39 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def conv2d_size_out(size, kernel_size = 5, stride = 2):
-    """
-    Description
-    --------------
-    Compute the output dimension when applying a convolutional layer.
-    
-    Parameters
-    --------------
-    size        : Int, width or height of the input.
-    kernel_size : Int, the kernel size of the conv layer (default=5)
-    stride      : Int, the stride used in the conv layer (default=2)
-    """
-    
+def conv2d_size_out(size, kernel_size=5, stride=2):
+    # Compute the output dimension when applying a convolutional layer.
     return (size - (kernel_size - 1) - 1) // stride  + 1
 
 class DQNetwork(nn.Module):
-    
-    def __init__(self, w = 120, h = 160, init_zeros = False, stack_size = 4,out = 3):
-        """
-        Description
-        ---------------
-        Constructor of Deep Q-network class.
-        
-        Parameters
-        ---------------
-        w          : Int, input width (default=120)
-        h          : Int, input height (default=160)
-        init_zeros : Boolean, whether to initialize the weights to zero or not.
-        stack_size : Int, input dimension which is the number of frames to stack to create motion (default=4)
-        out        : Int, the number of output units, it corresponds to the number of possible actions (default=3).
-                     Be careful, it must be changed when considering a different number of possible actions.
-        """
-        
+    def __init__(self, w=120, h=160, init_zeros=False, stack_size=4, actions=3):
         super(DQNetwork, self).__init__()
         
         # Conv Module
@@ -52,7 +25,7 @@ class DQNetwork(nn.Module):
         linear_input_size = convw * convh * 64
         
         self.fc = nn.Linear(linear_input_size, 512)
-        self.output = nn.Linear(512, out)
+        self.output = nn.Linear(512, actions)
         
     def forward(self, x):
         x = F.relu(self.conv_1(x))
