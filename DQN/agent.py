@@ -9,6 +9,8 @@ from models import *
 
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'dones'))
 
+METRICS_WINDOW = 10  # size of rolling window for metrics
+
 
 class Agent:
 
@@ -37,7 +39,7 @@ class Agent:
         return r
 
     def train(self, game, total_episodes=100, pretrain=100, frame_skip=4, lr=1e-4, max_tau=100,
-              explore_start=1.0, explore_stop=0.01, decay_rate=0.0001, gamma=0.99, freq=50):
+              explore_start=1.0, explore_stop=0.01, decay_rate=0.0001, gamma=0.99, freq=50, logfile=None):
         """
         pretrain           : Int, the number of initial experiences to put in the replay buffer (default=100)
         max_tau            : Int, number of steps to performe double q-learning parameters update (default=100)
@@ -48,13 +50,17 @@ class Agent:
         freq               : Int, number of episodes to save model weights (default=50)
         """
 
+        if logfile is None:
+            logfile = '{}_{}'.format(datetime.now().strftime('%H:%M'), self.scenario)
+
         # Setting tensorboadX and variables of interest
-        writer = SummaryWriter(log_dir='runs/{}_{}'.format(self.scenario, datetime.now().strftime('%H:%M')))
-        kill_count = np.zeros(10)  # This list will contain kill counts of each 10 episodes in order to compute moving average
-        ammo = np.zeros(10)  # This list will contain ammo of each 10 episodes in order to compute moving average
-        rewards = np.zeros(10)  # This list will contain rewards of each 10 episodes in order to compute moving average
-        losses = np.zeros(10)  # This list will contain losses of each 10 episodes in order to compute moving average
-        episode_lengths = np.zeros(10)
+        writer = SummaryWriter(log_dir='runs/{}'.format(logfile))
+        # Metrics for tensorboard:
+        kill_count = np.zeros(METRICS_WINDOW)
+        ammo = np.zeros(METRICS_WINDOW)
+        rewards = np.zeros(METRICS_WINDOW)
+        losses = np.zeros(METRICS_WINDOW)
+        episode_lengths = np.zeros(METRICS_WINDOW)
         # Pretraining phase
         game.new_episode()
         episode_length = 0
@@ -157,19 +163,20 @@ class Agent:
                           )
                     # Add experience to the replay buffer
                     self.memory.add((state, action, reward, next_state, torch.tensor([not done], dtype=torch.float)))
-                    # Add number of kills and ammo variables
-                    kill_count[episode % 10] = game.get_game_variable(KILLCOUNT)
-                    ammo[episode % 10] = game.get_game_variable(AMMO2)
-                    rewards[episode % 10] = total_reward
-                    losses[episode % 10] = loss
-                    episode_lengths[episode % 10] = episode_length
+                    # Saving metrics
+                    kill_count[episode % METRICS_WINDOW] = game.get_game_variable(KILLCOUNT)
+                    ammo[episode % METRICS_WINDOW] = game.get_game_variable(AMMO2)
+                    rewards[episode % METRICS_WINDOW] = total_reward
+                    losses[episode % METRICS_WINDOW] = loss
+                    episode_lengths[episode % METRICS_WINDOW] = episode_length
                     # Update writer
-                    if (episode > 0) and (episode % 10 == 0):
-                        writer.add_scalar('Game variables/Kills', kill_count.mean(), episode)
-                        writer.add_scalar('Game variables/Ammo', ammo.mean(), episode)
-                        writer.add_scalar('Game variables/Length', episode_lengths.mean(), episode)
-                        writer.add_scalar('Reward Loss/Reward', rewards.mean(), episode)
-                        writer.add_scalar('Reward Loss/loss', losses.mean(), episode)
+                    if (episode > 0) and (episode % METRICS_WINDOW == 0):
+                        writer.add_scalar('Game/Kills', kill_count.mean(), episode)
+                        writer.add_scalar('Game/Ammo', ammo.mean(), episode)
+                        writer.add_scalar('Game/Length', episode_lengths.mean(), episode)
+                        writer.add_scalar('Train/Reward', rewards.mean(), episode)
+                        writer.add_scalar('Train/Loss', losses.mean(), episode)
+                        writer.add_scalar('Train/Explore', explore_probability, episode)
 
                 else:
                     # Get the next state
@@ -213,7 +220,7 @@ class Agent:
                     tau = 0
 
             if (episode % freq) == 0:  # +1 just to avoid the conditon episode != 0
-                model_file = 'weights/' + self.scenario + '/' + str(episode) + '.pth'
+                model_file = 'weights/' + logfile + '/' + str(episode) + '.pth'
                 torch.save(dqn_model.state_dict(), model_file)
                 print('\nSaved model to ' + model_file)
 
