@@ -137,3 +137,36 @@ def predict_action(explore_start, explore_stop, decay_rate, decay_step, state, m
 def update_target(current_model, target_model):
     # Update the parameters of target_model with those of current_model
     target_model.load_state_dict(current_model.state_dict())
+
+
+def drop_incompatible_layers(model, state_dict, layers_to_ignore=None):
+        """Drop layers from state_dict which are not present in the model, have different shape or are manually specified in layers_to_ignore"""
+        model_state_dict = model.state_dict()
+
+        unexpected = set(state_dict.keys()) - set(model_state_dict.keys())
+        missing = set(model_state_dict.keys()) - set(state_dict.keys())
+        ignored = set()
+        incompatible = set()
+
+        if layers_to_ignore:
+            for layer in layers_to_ignore:
+                if '{}.weight'.format(layer) in model_state_dict:
+                    ignored.add('{}.weight'.format(layer))
+                if '{}.bias'.format(layer) in model_state_dict:
+                    ignored.add('{}.bias'.format(layer))
+
+        for key in set(state_dict.keys()) & set(model_state_dict.keys()):
+            if state_dict[key].shape != model_state_dict[key].shape:
+                incompatible.add(key)
+
+        for key in (unexpected | ignored | incompatible):
+            del state_dict[key]
+
+        if unexpected or missing or ignored or incompatible:
+            print('WARNING: some weights were not loaded for the model. Unexpected: {}. Missing: {}. Ignored: {}. Incompatible: {}'.format(
+                ','.join(unexpected) if unexpected else 'NONE',
+                ','.join(missing) if missing else 'NONE',
+                ','.join(ignored) if ignored else 'NONE',
+                ','.join(incompatible) if incompatible else 'NONE',
+            ))
+        

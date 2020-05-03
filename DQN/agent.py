@@ -118,8 +118,9 @@ class Agent:
             target_dqn_model.cuda()
         if load_weights:
             state_dict = torch.load(load_weights)
-            dqn_model.load_state_dict(state_dict)
-            target_dqn_model.load_state_dict(state_dict)
+            drop_incompatible_layers(dqn_model, state_dict)
+            dqn_model.load_state_dict(state_dict, strict=False)
+            target_dqn_model.load_state_dict(state_dict, strict=False)
             
 
         optimizer = optim.Adam(dqn_model.parameters(), lr=lr)
@@ -162,7 +163,7 @@ class Agent:
                     next_state = np.zeros((240, 320), dtype='uint8')[:, :, None]
                     next_state, stacked_frames = stack_frames(stacked_frames, next_state, False, self.stack_size, self.resize)
                     total_reward = np.sum(episode_rewards)
-                    print('Episode: {}'.format(episode),
+                    print('Episode: {}'.format(episode+1),
                           'Length: {}'.format(episode_length),
                           'Explore P: {:.4f}'.format(explore_probability),
                           )
