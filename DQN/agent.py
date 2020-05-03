@@ -40,7 +40,7 @@ class Agent:
         return r
 
     def train(self, game, total_episodes=100, pretrain=100, frame_skip=4, lr=1e-4, max_tau=100,
-              explore_start=1.0, explore_stop=0.01, decay_rate=0.0001, gamma=0.99, save_freq=50, load_weights=None, logfile=None):
+              explore_start=1.0, explore_stop=0.01, decay_rate=0.0001, gamma=0.99, save_freq=50, load_weights=None, ignore_trained_layers=None, logfile=None):
         """
         pretrain           : Int, the number of initial experiences to put in the replay buffer (default=100)
         max_tau            : Int, number of steps to performe double q-learning parameters update (default=100)
@@ -117,8 +117,9 @@ class Agent:
             dqn_model.cuda()
             target_dqn_model.cuda()
         if load_weights:
+            ignore_trained_layers = ignore_trained_layers.split(',') if ignore_trained_layers else []
             state_dict = torch.load(load_weights)
-            drop_incompatible_layers(dqn_model, state_dict)
+            drop_incompatible_layers(dqn_model, state_dict, layers_to_ignore=ignore_trained_layers)
             dqn_model.load_state_dict(state_dict, strict=False)
             target_dqn_model.load_state_dict(state_dict, strict=False)
             

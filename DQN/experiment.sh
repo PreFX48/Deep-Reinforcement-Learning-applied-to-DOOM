@@ -10,7 +10,7 @@ fi
 
 current_date="$(date +"%H:%M")"
 
-$PYTHON train.py --scenario defend_the_center --logfile "${current_date}_center_initial" --total_episodes 500
-$PYTHON train.py --scenario deadly_corridor --logfile "${current_date}_corridor_initial" --total_episodes 1000
-$PYTHON train.py --scenario defend_the_center --logfile "${current_date}_center_retrain" --load_weights "weights/${current_date}_corridor_initial/1000.pth" --total_episodes 500
-$PYTHON train.py --scenario deadly_corridor --logfile "${current_date}_corridor_retrain" --load_weights "weights/${current_date}_center_initial/500.pth" --total_episodes 1000
+$PYTHON train.py --scenario defend_the_center --logfile "${current_date}_center_initial" --total_episodes 700
+$PYTHON train.py --scenario deadly_corridor --logfile "${current_date}_corridor_initial" --total_episodes 2000
+$PYTHON train.py --scenario defend_the_center --logfile "${current_date}_center_retrain" --load_weights "weights/${current_date}_corridor_initial/2000.pth" --total_episodes 700
+$PYTHON train.py --scenario deadly_corridor --logfile "${current_date}_corridor_retrain" --load_weights "weights/${current_date}_center_initial/700.pth" --total_episodes 2000
