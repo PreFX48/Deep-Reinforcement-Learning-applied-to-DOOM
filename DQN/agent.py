@@ -1,5 +1,6 @@
 from collections import namedtuple
 from datetime import datetime
+import os
 from torch import optim
 from tensorboardX import SummaryWriter
 
@@ -39,7 +40,7 @@ class Agent:
         return r
 
     def train(self, game, total_episodes=100, pretrain=100, frame_skip=4, lr=1e-4, max_tau=100,
-              explore_start=1.0, explore_stop=0.01, decay_rate=0.0001, gamma=0.99, freq=50, logfile=None):
+              explore_start=1.0, explore_stop=0.01, decay_rate=0.0001, gamma=0.99, save_freq=50, load_weights=None, logfile=None):
         """
         pretrain           : Int, the number of initial experiences to put in the replay buffer (default=100)
         max_tau            : Int, number of steps to performe double q-learning parameters update (default=100)
@@ -47,7 +48,6 @@ class Agent:
         explore_stop       : Float, the final exploration probability (default=0.01)
         decay_rate         : Float, the decay rate of the exploration probability (default=1e-3)
         gamma              : Float, the reward discoundting coefficient, should be between 0 and 1 (default=0.99)
-        freq               : Int, number of episodes to save model weights (default=50)
         """
 
         if logfile is None:
@@ -116,6 +116,11 @@ class Agent:
             print("End of trainig phase: The screen might be frozen now, don't worry, models take some time to be loaded on GPU")
             dqn_model.cuda()
             target_dqn_model.cuda()
+        if load_weights:
+            state_dict = torch.load(load_weights)
+            dqn_model.load_state_dict(state_dict)
+            target_dqn_model.load_state_dict(state_dict)
+            
 
         optimizer = optim.Adam(dqn_model.parameters(), lr=lr)
         for episode in range(total_episodes):
@@ -170,13 +175,13 @@ class Agent:
                     losses[episode % METRICS_WINDOW] = loss
                     episode_lengths[episode % METRICS_WINDOW] = episode_length
                     # Update writer
-                    if (episode > 0) and (episode % METRICS_WINDOW == 0):
-                        writer.add_scalar('Game/Kills', kill_count.mean(), episode)
-                        writer.add_scalar('Game/Ammo', ammo.mean(), episode)
-                        writer.add_scalar('Game/Length', episode_lengths.mean(), episode)
-                        writer.add_scalar('Train/Reward', rewards.mean(), episode)
-                        writer.add_scalar('Train/Loss', losses.mean(), episode)
-                        writer.add_scalar('Train/Explore', explore_probability, episode)
+                    if (episode+1) % METRICS_WINDOW == 0:
+                        writer.add_scalar('Game/Kills', kill_count.mean(), episode+1)
+                        writer.add_scalar('Game/Ammo', ammo.mean(), episode+1)
+                        writer.add_scalar('Game/Length', episode_lengths.mean(), episode+1)
+                        writer.add_scalar('Train/Reward', rewards.mean(), episode+1)
+                        writer.add_scalar('Train/Loss', losses.mean(), episode+1)
+                        writer.add_scalar('Train/Explore', explore_probability, episode+1)
 
                 else:
                     # Get the next state
@@ -219,8 +224,11 @@ class Agent:
                     print('model updated')
                     tau = 0
 
-            if (episode % freq) == 0:  # +1 just to avoid the conditon episode != 0
-                model_file = 'weights/' + logfile + '/' + str(episode) + '.pth'
+            if (episode+1) % save_freq == 0:
+                weights_dir = 'weights/' + logfile
+                if not os.path.exists(weights_dir):
+                    os.makedirs(weights_dir)
+                model_file = '{}/{}.pth'.format(weights_dir, episode+1)
                 torch.save(dqn_model.state_dict(), model_file)
                 print('\nSaved model to ' + model_file)
 

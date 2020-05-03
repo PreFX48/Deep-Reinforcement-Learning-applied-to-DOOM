@@ -20,8 +20,9 @@ if __name__ == '__main__':
     parser.add_argument('--frame_skip', type=int, default=4, metavar='FS', help="the number of frames to repeat the action on")
     parser.add_argument('--lr', type=float, default=1e-4, metavar='LR', help="The learning rate")
     parser.add_argument('--max_tau', type=int, default=100, metavar='LR', help="Number of steps to performe double q-learning update")
-    parser.add_argument('--freq', type=int, default=50, metavar='FQ', help="Number of episodes to save model weights")
+    parser.add_argument('--save_freq', type=int, default=50, metavar='SFQ', help="Number of episodes to save model weights")
     parser.add_argument('--logfile', type=str, default=None, metavar='LOGFILE', help='Filename for tensorboard logs and model weights')
+    parser.add_argument('--load_weights', type=str, default=None, metavar='LOAD', help="Path to the weights we want to load (if we want)")
 
     args = parser.parse_args()
     game, possible_actions = create_environment(scenario=args.scenario, window=args.window)
@@ -29,4 +30,4 @@ if __name__ == '__main__':
                   batch_size=args.batch_size, resize=args.resize)
     agent.train(game, total_episodes=args.total_episodes, pretrain=args.pretrain, frame_skip=args.frame_skip, lr=args.lr,
                 max_tau=args.max_tau, explore_start=args.explore_start, explore_stop=args.explore_stop, decay_rate=args.decay_rate,
-                gamma=args.gamma, freq=args.freq, logfile=args.logfile)
+                gamma=args.gamma, save_freq=args.save_freq, load_weights=args.load_weights, logfile=args.logfile)
