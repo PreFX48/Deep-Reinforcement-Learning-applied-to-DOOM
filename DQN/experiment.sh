@@ -12,5 +12,5 @@ current_date="$(date +"%H:%M")"
 
 $PYTHON train.py --scenario defend_the_center --logfile "${current_date}_center_initial" --total_episodes 700
 $PYTHON train.py --scenario deadly_corridor --logfile "${current_date}_corridor_initial" --total_episodes 2000
-$PYTHON train.py --scenario defend_the_center --logfile "${current_date}_center_retrain" --load_weights "weights/${current_date}_corridor_initial/2000.pth" --total_episodes 700
-$PYTHON train.py --scenario deadly_corridor --logfile "${current_date}_corridor_retrain" --load_weights "weights/${current_date}_center_initial/700.pth" --total_episodes 2000
+$PYTHON train.py --scenario defend_the_center --logfile "${current_date}_center_retrain" --load_weights "weights/${current_date}_corridor_initial/2000.pth" --ignore_trained_layers fc2,output --total_episodes 700
+$PYTHON train.py --scenario deadly_corridor --logfile "${current_date}_corridor_retrain" --load_weights "weights/${current_date}_center_initial/700.pth" --ignore_trained_layers fc2,output --total_episodes 2000
