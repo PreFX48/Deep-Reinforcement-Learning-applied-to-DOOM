@@ -74,8 +74,7 @@ class Agent:
 
         model = OracleNetwork(stack_size=self.stack_size)
         if use_cuda:
-            for model in model_by_action.values():
-                model.cuda()
+            model.cuda()
         if load_weights:
             ignore_trained_layers = ignore_trained_layers.split(',') if ignore_trained_layers else []
             state_dict = torch.load(load_weights)
