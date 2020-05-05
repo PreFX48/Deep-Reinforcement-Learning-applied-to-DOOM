@@ -155,7 +155,7 @@ class Agent:
                 if not os.path.exists(weights_dir):
                     os.makedirs(weights_dir)
                 model_file = '{}/{}.pth'.format(weights_dir, episode+1)
-                torch.save(dqn_model.state_dict(), model_file)
+                torch.save(model.state_dict(), model_file)
                 print('\nSaved model to ' + model_file)
 
         writer.close()

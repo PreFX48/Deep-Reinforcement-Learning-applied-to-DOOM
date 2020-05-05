@@ -74,6 +74,7 @@ def action_vector_to_name(action):
         action = 'right'
     else:
         action = 'UNKNOWN'
+    return action
 
 
 def draw_predictions(images):
