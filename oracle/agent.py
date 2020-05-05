@@ -10,8 +10,8 @@ from utils import *
 from models import *
 
 
-METRICS_WINDOW = 4  # size of rolling window for metrics
-IMAGES_PERIOD = 4  # show examples of predictions every N episodes
+METRICS_WINDOW = 5  # size of rolling window for metrics
+IMAGES_PERIOD = 15  # show examples of predictions every N episodes
 
 
 class Agent:
