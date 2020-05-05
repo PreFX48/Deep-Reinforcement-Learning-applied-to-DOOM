@@ -67,7 +67,7 @@ def stack_frames(stacked_frames, state, is_new_episode, maxlen=4, resize=(120, 1
 
 def action_vector_to_name(action):
     if action[0] == 1:
-        action = 'right'
+        action = 'left'
     elif action[1] == 1:
         action = 'shoot'
     elif action[2] == 1:
