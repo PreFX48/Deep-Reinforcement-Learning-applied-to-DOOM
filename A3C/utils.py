@@ -68,7 +68,7 @@ def push_and_pull(opt, local_net, global_net, done, state, states, actions, rewa
     if done:
         v_s_ = 0.  # terminal
     else:
-        v_s_ = local_net.value(state).to('cpu').data.numpy()[0, 0]
+        v_s_ = local_net.value(state.to(DEVICE)).to('cpu').data.numpy()[0, 0]
 
     buffer_v_target = []
     for r in rewards[::-1]:    # reverse buffer r
@@ -79,14 +79,14 @@ def push_and_pull(opt, local_net, global_net, done, state, states, actions, rewa
     loss = local_net.loss_func(
         torch.from_numpy(np.vstack(states)).to(DEVICE),
         torch.from_numpy(np.array(actions) if actions[0].dtype == np.int64 else np.vstack(actions)).to(DEVICE),
-        torch.from_numpy(np.array(buffer_v_target)[:, None]).to(DEVICE)
+        torch.from_numpy(np.array(buffer_v_target)[:, None]).type(torch.FloatTensor).to(DEVICE)
     )
 
     # calculate local gradients and push local parameters to global
     opt.zero_grad()
     loss.backward()
     for local_param, global_param in zip(local_net.parameters(), global_net.parameters()):
-        global_param._grad = local_param.grad
+        global_param._grad = local_param.grad.to('cpu')
     opt.step()
 
     # pull global parameters

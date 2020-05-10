@@ -9,8 +9,9 @@ from utils import create_environment
 from worker import Worker
 
 if __name__ == '__main__':
+    mp.set_start_method('spawn')  # for CUDA support
     game, possible_actions = create_environment(scenario=SCENARIO)
-    del game
+    game.close()
 
     writer = SummaryWriter(log_dir='runs/{}'.format(datetime.now().strftime('%H:%M')))
 
@@ -20,7 +21,7 @@ if __name__ == '__main__':
     global_ep, global_ep_r, res_queue = mp.Value('i', 0), mp.Value('d', 0.), mp.Queue()
 
     workers = [
-        Worker(global_net, opt, global_ep, global_ep_r, res_queue, i+1)
+        Worker(possible_actions, global_net, opt, global_ep, global_ep_r, res_queue, i+1)
         for i in range(WORKERS)
     ]
     for worker in workers:
